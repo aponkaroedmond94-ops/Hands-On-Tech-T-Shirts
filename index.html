@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071522">
+  <title>Hands On Tech T-Shirts | Your Style, Your Vibe</title>
+  <meta name="description" content="Order Christmas, New Year, family and personalised T-shirts from Hands On Tech. Round neck GH₵50; Lacoste GH₵60.">
+
+  <style>
+    :root {
+      --ink: #071522;
+      --navy: #0b2032;
+      --gold: #ffd447;
+      --cream: #fffaf0;
+      --muted: #657282;
+      --line: #e8e9ec;
+      --green: #128c55;
+      --shadow: 0 12px 32px rgba(7, 21, 34, .09);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #f6f7f8;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    .topbar {
+      background: var(--ink);
+      color: white;
+      padding: 10px 5%;
+      text-align: center;
+      font-size: 13px;
+    }
+    .topbar strong { color: var(--gold); }
+    header {
+      background: var(--ink);
+      color: white;
+      padding: 22px 5% 48px;
+      overflow: hidden;
+      position: relative;
+    }
+    .nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .brand { font-weight: 900; font-size: 20px; letter-spacing: .3px; }
+    .brand span { color: var(--gold); }
+    .nav a {
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .hero {
+      max-width: 1200px;
+      margin: 60px auto 0;
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      align-items: center;
+      gap: 35px;
+    }
+    .eyebrow {
+      display: inline-block;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: clamp(38px, 6vw, 70px);
+      line-height: .99;
+      margin: 13px 0 18px;
+      letter-spacing: -2px;
+    }
+    h1 span { color: var(--gold); }
+    .hero p { color: #d4dce4; max-width: 620px; line-height: 1.7; margin: 0; }
+    .hero-actions { margin-top: 25px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .button {
+      display: inline-flex;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 17px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .button-gold { background: var(--gold); color: var(--ink); }
+    .button-outline { border: 1px solid #607080; color: white; background: transparent; }
+    .hero-price {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 20px;
+      padding: 25px;
+      text-align: center;
+    }
+    .hero-price .price { font-size: 27px; font-weight: 900; color: var(--gold); }
+    .hero-price p { margin: 7px auto 0; font-size: 13px; }
+    main { max-width: 1200px; margin: 0 auto; padding: 36px 5% 60px; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .section-head h2 { margin: 0; font-size: 28px; }
+    .section-head p { color: var(--muted); margin: 5px 0 0; font-size: 14px; }
+    .shop-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 350px;
+      align-items: start;
+      gap: 22px;
+    }
+    .catalog {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 15px;
+    }
+    .design-card, .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(7,21,34,.035);
+    }
+    .design-card { overflow: hidden; }
+    .design-art {
+      min-height: 135px;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .design-art::before, .design-art::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,.12);
+    }
+    .design-art::before { width: 130px; height: 130px; top: -60px; right: -25px; }
+    .design-art::after { width: 85px; height: 85px; bottom: -48px; left: -18px; }
+    .art-icon { font-size: 36px; position: relative; z-index: 1; }
+    .art-title { font-size: 15px; font-weight: 900; position: relative; z-index: 1; margin-top: 5px; }
+    .design-info { padding: 14px; }
+    .design-info h3 { font-size: 15px; margin: 0 0 5px; }
+    .design-info p { color: var(--muted); font-size: 12px; min-height: 33px; line-height: 1.45; margin: 0 0 12px; }
+    .card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .from-price { font-weight: 900; font-size: 13px; }
+    .add-button {
+      border: 0;
+      border-radius: 8px;
+      background: var(--ink);
+      color: white;
+      padding: 9px 12px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .add-button:hover { background: #183853; }
+    .order-panel { padding: 20px; position: sticky; top: 14px; }
+    .order-panel h2 { font-size: 21px; margin: 0 0 4px; }
+    .subtext { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+    .cart-empty {
+      background: #f7f8fa;
+      color: var(--muted);
+      border-radius: 10px;
+      padding: 18px 12px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .cart-list { display: grid; gap: 10px; }
+    .cart-item {
+      border-bottom: 1px solid var(--line);
+      padding: 0 0 10px;
+    }
+    .cart-item-top { display: flex; justify-content: space-between; gap: 10px; }
+    .cart-item strong { font-size: 13px; }
+    .cart-item small { display: block; color: var(--muted); line-height: 1.5; margin-top: 3px; }
+    .remove-item {
+      border: 0;
+      background: none;
+      color: #bb3441;
+      font-size: 12px;
+      padding: 0;
+      align-self: start;
+    }
+    .cart-item-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .qty-control { display: flex; align-items: center; gap: 8px; }
+    .qty-control button {
+      width: 25px;
+      height: 25px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+    }
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 900;
+      font-size: 17px;
+      border-top: 1px solid var(--line);
+      margin-top: 15px;
+      padding-top: 14px;
+    }
+    .form-grid { display: grid; gap: 11px; margin-top: 17px; }
+    label { display: block; font-size: 12px; font-weight: 750; margin-bottom: 5px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid #dce0e4;
+      border-radius: 8px;
+      color: var(--ink);
+      background: white;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #7e9ab0; box-shadow: 0 0 0 3px rgba(31,92,135,.1); }
+    textarea { resize: vertical; min-height: 70px; }
+    .checkout-button {
+      width: 100%;
+      border: 0;
+      background: var(--green);
+      color: white;
+      border-radius: 10px;
+      padding: 13px;
+      font-weight: 900;
+      margin-top: 4px;
+    }
+    .checkout-button:hover { background: #0d7547; }
+    .fine-print { color: var(--muted); font-size: 11px; line-height: 1.5; text-align: center; margin: 10px 0 0; }
+    .benefits {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 28px;
+    }
+    .benefit {
+      border: 1px solid var(--line);
+      background: white;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .benefit span { margin-right: 7px; }
+    footer {
+      background: var(--ink);
+      color: #d8e0e8;
+      text-align: center;
+      padding: 25px 5%;
+      font-size: 13px;
+    }
+    footer strong { color: var(--gold); }
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      background: rgba(2,10,17,.66);
+      padding: 18px;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 17px;
+      padding: 22px;
+      width: min(100%, 470px);
+      max-height: 92vh;
+      overflow: auto;
+      box-shadow: var(--shadow);
+    }
+    .modal-header { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+    .modal-header h2 { font-size: 21px; margin: 0; }
+    .close-modal { border: 0; background: #f0f2f4; border-radius: 50%; width: 32px; height: 32px; }
+    .modal-desc { color: var(--muted); font-size: 13px; margin: 5px 0 15px; }
+    .modal-fields { display: grid; gap: 12px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-add { width: 100%; margin-top: 16px; }
+    .notice {
+      display: none;
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #fff4d3;
+      font-size: 12px;
+    }
+    @media (max-width: 900px) {
+      .shop-layout { grid-template-columns: 1fr; }
+      .order-panel { position: static; }
+      .catalog { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 620px) {
+      header { padding-bottom: 34px; }
+      .hero { grid-template-columns: 1fr; margin-top: 38px; }
+      .hero-price { text-align: left; }
+      .hero-price p { margin-left: 0; }
+      .catalog { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .design-art { min-height: 115px; }
+      .design-info { padding: 11px; }
+      .section-head { align-items: start; flex-direction: column; }
+      .benefits { grid-template-columns: repeat(2, 1fr); }
+      .nav a { font-size: 12px; }
+    }
+    @media (max-width: 380px) {
+      .catalog { grid-template-columns: 1fr; }
+      .design-art { min-height: 125px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">Festive season collection · <strong>Round Neck GH₵50</strong> · <strong>Lacoste GH₵60</strong></div>
+
+  <header>
+    <nav class="nav">
+      <div class="brand">HANDS <span>ON</span> TECH</div>
+      <a href="https://wa.me/233246116269" target="_blank" rel="noopener">WhatsApp: 024 611 6269 ↗</a>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <span class="eyebrow">Your style. Your vibe.</span>
+        <h1>Wear the joy.<br><span>Share the love.</span></h1>
+        <p>Find a design for Christmas, New Year, church, parties, family and friends—or personalise a shirt with a name or special message.</p>
+        <div class="hero-actions">
+          <a class="button button-gold" href="#shop">Shop the collection ↓</a>
+          <a class="button button-outline" href="https://wa.me/233246116269" target="_blank" rel="noopener">Ask us on WhatsApp</a>
+        </div>
+      </div>
+      <div class="hero-price">
+        <div class="eyebrow">Easy on your budget</div>
+        <div class="price">GH₵50 <span style="color:white;font-size:16px">Round Neck</span></div>
+        <div class="price">GH₵60 <span style="color:white;font-size:16px">Lacoste</span></div>
+        <p>Available in sizes S–XXL. Add your chosen design to start an order.</p>
+      </div>
+    </section>
+  </header>
+
+  <main id="shop">
+    <div class="section-head">
+      <div>
+        <h2>Choose your design</h2>
+        <p>Select a design, then choose your shirt type, size and colour.</p>
+      </div>
+    </div>
+
+    <div class="shop-layout">
+      <section class="catalog" id="catalog" aria-label="T-shirt designs"></section>
+
+      <aside class="panel order-panel">
+        <h2>Your order</h2>
+        <p class="subtext">Review your selections, then send your order to WhatsApp.</p>
+        <div id="cart-content"></div>
+
+        <div class="form-grid">
+          <div>
+            <label for="customer-name">Your name *</label>
+            <input id="customer-name" autocomplete="name" placeholder="Full name">
+          </div>
+          <div>
+            <label for="customer-phone">Your phone number *</label>
+            <input id="customer-phone" type="tel" autocomplete="tel" placeholder="e.g. 024 123 4567">
+          </div>
+          <div>
+            <label for="delivery">Delivery or pickup *</label>
+            <select id="delivery">
+              <option value="">Choose an option</option>
+              <option>Delivery (I will confirm location and fee)</option>
+              <option>Pickup (please share pickup details)</option>
+            </select>
+          </div>
+          <div>
+            <label for="customer-notes">Order notes (optional)</label>
+            <textarea id="customer-notes" placeholder="Delivery area, timing, or any questions"></textarea>
+          </div>
+          <button class="checkout-button" id="checkout">Send order via WhatsApp</button>
+          <p class="fine-print">Your order is confirmed with Hands On Tech on WhatsApp. Delivery fees and final details can be agreed there.</p>
+        </div>
+        <div class="notice" id="notice" role="status"></div>
+      </aside>
+    </div>
+
+    <section class="benefits" aria-label="Why shop with us">
+      <div class="benefit"><span>🛡️</span>Quality prints & fabrics</div>
+      <div class="benefit"><span>⚡</span>Fast, reliable service</div>
+      <div class="benefit"><span>💛</span>Affordable prices</div>
+      <div class="benefit"><span>🎁</span>Perfect for gifts & celebrations</div>
+    </section>
+  </main>
+
+  <footer>
+    <strong>HANDS ON TECH</strong> — No One Is Late. · Call or WhatsApp
+    <a href="tel:+233246116269">024 611 6269</a>
+  </footer>
+
+  <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Add a T-shirt</h2>
+        <button class="close-modal" id="close-modal" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-desc" id="modal-description"></p>
+      <div class="modal-fields">
+        <div>
+          <label for="shirt-type">T-shirt type</label>
+          <select id="shirt-type">
+            <option value="Round Neck">Round Neck — GH₵50</option>
+            <option value="Lacoste">Lacoste — GH₵60</option>
+          </select>
+        </div>
+        <div class="two-col">
+          <div>
+            <label for="shirt-size">Size</label>
+            <select id="shirt-size">
+              <option>S</option><option>M</option><option>L</option>
+              <option>XL</option><option>XXL</option>
+            </select>
+          </div>
+          <div>
+            <label for="shirt-colour">Colour</label>
+            <select id="shirt-colour">
+              <option>Black</option><option>White</option><option>Red</option>
+              <option>Green</option><option>Navy</option><option>Grey</option>
+              <option>Yellow</option><option>Burgundy</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="shirt-quantity">Quantity</label>
+          <input id="shirt-quantity" type="number" min="1" max="99" value="1">
+        </div>
+        <div>
+          <label for="shirt-custom">Custom name or message (optional)</label>
+          <input id="shirt-custom" maxlength="60" placeholder="Name, family name or message">
+        </div>
+      </div>
+      <button class="button button-gold modal-add" id="add-to-cart">Add to order</button>
+    </div>
+  </div>
+
+  <script>
+    const designs = [
+      { name: "Merry Christmas", group: "Christmas Collection", icon: "🎄", title: "Merry Christmas", description: "Share love, peace and happiness.", color: "#c41e2b" },
+      { name: "Christmas Vibes Only", group: "Christmas Collection", icon: "✨", title: "Christmas Vibes", description: "A cheerful festive-season favourite.", color: "#14774b" },
+      { name: "Jesus Is the Reason", group: "Christian & Church", icon: "✝️", title: "Jesus Is the Reason", description: "For the season and church programmes.", color: "#0d6844" },
+      { name: "My Queen / My King", group: "Couples & Love", icon: "👑", title: "My Queen / My King", description: "A thoughtful matching-couple gift.", color: "#17191f" },
+      { name: "Family Christmas Crew", group: "Family Collection", icon: "❤️", title: "Family Christmas Crew", description: "Make your family celebration special.", color: "#a31d24" },
+      { name: "Hello 2027", group: "New Year Collection", icon: "🎆", title: "Hello 2027", description: "Welcome the New Year in style.", color: "#151a24" },
+      { name: "Good Vibes Only", group: "Party & Festival", icon: "🌴", title: "Good Vibes Only", description: "Made for December outings and parties.", color: "#e2a900" },
+      { name: "Chale, We Made It", group: "Ghanaian Style", icon: "🇬🇭", title: "Chale, We Made It", description: "Celebrate the year with Ghanaian flair.", color: "#15543c" },
+      { name: "God's Grace", group: "Christian & Church", icon: "🙏", title: "God's Grace", description: "A faith-inspired design for every day.", color: "#f0eee7" },
+      { name: "My Favourite Human", group: "Personalised Gifts", icon: "🎁", title: "My Favourite Human", description: "A sweet gift for someone you love.", color: "#b99056" },
+      { name: "You Are My Always", group: "Romantic & Inspirational", icon: "💞", title: "You Are My Always", description: "A loving gift for your special person.", color: "#b6212c" },
+      { name: "Custom Design", group: "Personalised Gifts", icon: "✍️", title: "Make It Yours", description: "Add your own name or special message.", color: "#224d77" }
+    ];
+
+    const cartKey = "handsOnTechCartV1";
+    let cart = [];
+    let selectedDesign = null;
+
+    try {
+      cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
+      if (!Array.isArray(cart)) cart = [];
+    } catch {
+      cart = [];
+    }
+
+    const catalog = document.getElementById("catalog");
+    const backdrop = document.getElementById("modal-backdrop");
+    const notice = document.getElementById("notice");
+
+    function money(amount) {
+      return "GH₵" + Number(amount).toFixed(2).replace(".00", "");
+    }
+
+    function renderCatalog() {
+      catalog.innerHTML = designs.map((design, index) => `
+        <article class="design-card">
+          <div class="design-art" style="background:${design.color}">
+            <div>
+              <div class="art-icon">${design.icon}</div>
+              <div class="art-title">${design.title}</div>
+            </div>
+          </div>
+          <div class="design-info">
+            <h3>${design.name}</h3>
+            <p>${design.group} · ${design.description}</p>
+            <div class="card-bottom">
+              <span class="from-price">From GH₵50</span>
+              <button class="add-button" data-design="${index}">Choose</button>
+            </div>
+          </div>
+        </article>
+      `).join("");
+
+      catalog.querySelectorAll("[data-design]").forEach(button => {
+        button.addEventListener("click", () => openModal(Number(button.dataset.design)));
+      });
+    }
+
+    function openModal(index) {
+      selectedDesign = designs[index];
+      document.getElementById("modal-title").textContent = selectedDesign.name;
+      document.getElementById("modal-description").textContent =
+        selectedDesign.group + " · " + selectedDesign.description;
+      document.getElementById("shirt-quantity").value = 1;
+      document.getElementById("shirt-custom").value = "";
+      backdrop.classList.add("open");
+      document.getElementById("shirt-type").focus();
+    }
+
+    function closeModal() {
+      backdrop.classList.remove("open");
+    }
+
+    function saveCart() {
+      try { localStorage.setItem(cartKey, JSON.stringify(cart)); } catch {}
+      renderCart();
+    }
+
+    function renderCart() {
+      const container = document.getElementById("cart-content");
+      if (!cart.length) {
+        container.innerHTML = '<div class="cart-empty">Your order is empty.<br>Choose a design to get started.</div>';
+        return;
+      }
+
+      const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      container.innerHTML = `
+        <div class="cart-list">
+          ${cart.map((item, index) => `
+            <div class="cart-item">
+              <div class="cart-item-top">
+                <div>
+                  <strong>${escapeHTML(item.design)} — ${escapeHTML(item.type)}</strong>
+                  <small>${escapeHTML(item.size)} · ${escapeHTML(item.colour)}${item.custom ? " · Custom: " + escapeHTML(item.custom) : ""}</small>
+                </div>
+                <button class="remove-item" data-remove="${index}" aria-label="Remove item">Remove</button>
+              </div>
+              <div class="cart-item-bottom">
+                <div class="qty-control">
+                  <button data-change="-1" data-index="${index}" aria-label="Decrease quantity">−</button>
+                  <span>${item.quantity}</span>
+                  <button data-change="1" data-index="${index}" aria-label="Increase quantity">+</button>
+                </div>
+                <strong>${money(item.price * item.quantity)}</strong>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+        <div class="cart-total"><span>Subtotal</span><span>${money(total)}</span></div>
+      `;
+
+      container.querySelectorAll("[data-remove]").forEach(button => {
+        button.addEventListener("click", () => {
+          cart.splice(Number(button.dataset.remove), 1);
+          saveCart();
+        });
+      });
+
+      container.querySelectorAll("[data-change]").forEach(button => {
+        button.addEventListener("click", () => {
+          const index = Number(button.dataset.index);
+          cart[index].quantity += Number(button.dataset.change);
+          if (cart[index].quantity < 1) cart.splice(index, 1);
+          saveCart();
+        });
+      });
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[char]);
+    }
+
+    document.getElementById("add-to-cart").addEventListener("click", () => {
+      const type = document.getElementById("shirt-type").value;
+      const quantity = Number(document.getElementById("shirt-quantity").value);
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+        alert("Please enter a quantity between 1 and 99.");
+        return;
+      }
+
+      cart.push({
+        design: selectedDesign.name,
+        type,
+        price: type === "Lacoste" ? 60 : 50,
+        size: document.getElementById("shirt-size").value,
+        colour: document.getElementById("shirt-colour").value,
+        custom: document.getElementById("shirt-custom").value.trim(),
+        quantity
+      });
+
+      saveCart();
+      closeModal();
+      notice.style.display = "block";
+      notice.textContent = "Added to your order. Add another design or complete your details below.";
+      setTimeout(() => { notice.style.display = "none"; }, 4000);
+    });
+
+    document.getElementById("close-modal").addEventListener("click", closeModal);
+    backdrop.addEventListener("click", event => {
+      if (event.target === backdrop) closeModal();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeModal();
+    });
+
+    document.getElementById("checkout").addEventListener("click", () => {
+      const name = document.getElementById("customer-name").value.trim();
+      const phone = document.getElementById("customer-phone").value.trim();
+      const delivery = document.getElementById("delivery").value;
+      const notes = document.getElementById("customer-notes").value.trim();
+
+      if (!cart.length) {
+        alert("Please choose and add at least one T-shirt first.");
+        return;
+      }
+      if (!name || !phone || !delivery) {
+        alert("Please enter your name, phone number, and delivery or pickup preference.");
+        return;
+      }
+
+      const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const lines = cart.map((item, index) =>
+        `${index + 1}. ${item.design} — ${item.type}, ${item.size}, ${item.colour}, Qty: ${item.quantity}` +
+        (item.custom ? `, Custom text: "${item.custom}"` : "") +
+        ` — ${money(item.price * item.quantity)}`
+      );
+
+      const message = [
+        "Hello Hands On Tech! I'd like to place a T-shirt order:",
+        "",
+        ...lines,
+        "",
+        `Subtotal: ${money(total)}`,
+        "",
+        `Name: ${name}`,
+        `Customer phone: ${phone}`,
+        `Preference: ${delivery}`,
+        notes ? `Notes: ${notes}` : "",
+        "",
+        "Please confirm availability, delivery/pickup details, and the final amount. Thank you!"
+      ].filter(Boolean).join("\n");
+
+      const whatsappURL = "https://wa.me/233246116269?text=" + encodeURIComponent(message);
+      window.open(whatsappURL, "_blank", "noopener");
+    });
+
+    renderCatalog();
+    renderCart();
+  </script>
+</body>
+</html>
