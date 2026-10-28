@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hands On Tech — Admin</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f3f5f7; color: #102033; font: 15px system-ui, sans-serif; }
+    header { background: #071522; color: white; padding: 18px 5%; }
+    header strong { color: #ffd447; }
+    main { max-width: 900px; margin: 28px auto; padding: 0 16px 40px; }
+    .card { background: white; padding: 22px; border-radius: 14px; margin-bottom: 18px; box-shadow: 0 5px 20px #10203312; }
+    h1, h2 { margin-top: 0; }
+    label { display: block; font-weight: 700; font-size: 13px; margin: 12px 0 5px; }
+    input, textarea, select, button { font: inherit; }
+    input, textarea, select { width: 100%; padding: 11px; border: 1px solid #ccd2d9; border-radius: 8px; }
+    textarea { min-height: 75px; }
+    button { border: 0; border-radius: 8px; padding: 11px 15px; background: #071522; color: white; font-weight: 800; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .gold { background: #ffd447; color: #071522; }
+    .danger { background: #b8323e; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .hidden { display: none !important; }
+    .hint { color: #66717d; font-size: 13px; line-height: 1.5; }
+    #status { margin-top: 12px; white-space: pre-wrap; }
+    .product { display: grid; grid-template-columns: 90px 1fr auto; gap: 14px; align-items: center; border-top: 1px solid #e4e7ea; padding: 14px 0; }
+    .product img { width: 90px; height: 75px; object-fit: cover; border-radius: 8px; background: #eee; }
+    .product small { display: block; color: #657282; margin-top: 4px; }
+    @media(max-width: 560px) {
+      .row { grid-template-columns: 1fr; gap: 0; }
+      .product { grid-template-columns: 65px 1fr; }
+      .product img { width: 65px; height: 65px; }
+      .product button { grid-column: 2; justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <header><strong>HANDS ON TECH</strong> — Design Admin</header>
+
+  <main>
+    <section class="card" id="login-card">
+      <h1>Admin login</h1>
+      <p class="hint">Sign in with the account you added to the Supabase admins table.</p>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input id="email" type="email" required autocomplete="username">
+        <label for="password">Password</label>
+        <input id="password" type="password" required autocomplete="current-password">
+        <p><button class="gold" type="submit">Sign in</button></p>
+      </form>
+    </section>
+
+    <section id="admin-area" class="hidden">
+      <div class="card">
+        <button id="logout" style="float:right">Sign out</button>
+        <h1>Manage T-shirt designs</h1>
+        <p class="hint">Upload a design picture, add the customer-facing details and set the price for each shirt type. Images should be JPG, PNG or WebP, up to 5 MB.</p>
+
+        <form id="product-form">
+          <label for="name">Design name *</label>
+          <input id="name" required maxlength="80" placeholder="e.g. Merry Christmas">
+
+          <label for="category">Collection / category</label>
+          <input id="category" maxlength="60" placeholder="e.g. Christmas Collection">
+
+          <label for="description">Short description</label>
+          <textarea id="description" maxlength="250" placeholder="A short description customers will see"></textarea>
+
+          <div class="row">
+            <div>
+              <label for="round-price">Round Neck price (GH₵) *</label>
+              <input id="round-price" type="number" min="0" step="0.01" value="50" required>
+            </div>
+            <div>
+              <label for="lacoste-price">Lacoste price (GH₵) *</label>
+              <input id="lacoste-price" type="number" min="0" step="0.01" value="60" required>
+            </div>
+          </div>
+
+          <label for="image">Design picture *</label>
+          <input id="image" type="file" accept="image/png,image/jpeg,image/webp" required>
+
+          <p><button class="gold" id="upload-button" type="submit">Upload design</button></p>
+        </form>
+        <div id="status" class="hint" role="status"></div>
+      </div>
+
+      <div class="card">
+        <h2>Published designs</h2>
+        <div id="products-list" class="hint">Loading designs…</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_PUBLIC_KEY";
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginCard = document.getElementById("login-card");
+    const adminArea = document.getElementById("admin-area");
+    const statusBox = document.getElementById("status");
+
+    function showStatus(message, error = false) {
+      statusBox.textContent = message;
+      statusBox.style.color = error ? "#b8323e" : "#167247";
+    }
+
+    async function showAdmin(user) {
+      if (!user) {
+        loginCard.classList.remove("hidden");
+        adminArea.classList.add("hidden");
+        return;
+      }
+
+      const { data, error } = await db
+        .from("admins")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error || !data) {
+        await db.auth.signOut();
+        loginCard.classList.remove("hidden");
+        adminArea.classList.add("hidden");
+        alert("This account is not registered as a store admin.");
+        return;
+      }
+
+      loginCard.classList.add("hidden");
+      adminArea.classList.remove("hidden");
+      await loadProducts();
+    }
+
+    document.getElementById("login-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const { data, error } = await db.auth.signInWithPassword({
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value
+      });
+      if (error) return alert(error.message);
+      await showAdmin(data.user);
+    });
+
+    document.getElementById("logout").addEventListener("click", async () => {
+      await db.auth.signOut();
+      location.reload();
+    });
+
+    async function loadProducts() {
+      const list = document.getElementById("products-list");
+      list.textContent = "Loading designs…";
+
+      const { data, error } = await db
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        list.textContent = "Could not load designs: " + error.message;
+        return;
+      }
+      if (!data.length) {
+        list.textContent = "No designs yet. Upload your first design above.";
+        return;
+      }
+
+      list.innerHTML = data.map(product => `
+        <div class="product">
+          <img src="${escapeHTML(product.image_url)}" alt="">
+          <div>
+            <strong>${escapeHTML(product.name)}</strong>
+            <small>${escapeHTML(product.category || "")}</small>
+            <small>Round Neck: GH₵${Number(product.round_neck_price).toFixed(2)}
+              · Lacoste: GH₵${Number(product.lacoste_price).toFixed(2)}</small>
+          </div>
+          <button class="danger" data-delete="${escapeHTML(product.id)}"
+            data-path="${escapeHTML(product.image_path)}">Delete</button>
+        </div>
+      `).join("");
+
+      list.querySelectorAll("[data-delete]").forEach(button => {
+        button.addEventListener("click", () => deleteProduct(button.dataset.delete, button.dataset.path));
+      });
+    }
+
+    document.getElementById("product-form").addEventListener("submit", async event => {
+      event.preventDefault();
+
+      const file = document.getElementById("image").files[0];
+      if (!file) return showStatus("Please select an image.", true);
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        return showStatus("Choose a JPG, PNG or WebP image.", true);
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        return showStatus("The image must be 5 MB or smaller.", true);
+      }
+
+      const roundPrice = Number(document.getElementById("round-price").value);
+      const lacostePrice = Number(document.getElementById("lacoste-price").value);
+      if (roundPrice < 0 || lacostePrice < 0) {
+        return showStatus("Prices cannot be negative.", true);
+      }
+
+      const button = document.getElementById("upload-button");
+      button.disabled = true;
+      showStatus("Uploading picture and saving design…");
+
+      const extension = file.name.split(".").pop().toLowerCase();
+      const imagePath = `${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await db.storage
+        .from("shirt-designs")
+        .upload(imagePath, file, { upsert: false, contentType: file.type });
+
+      if (uploadError) {
+        button.disabled = false;
+        return showStatus("Image upload failed: " + uploadError.message, true);
+      }
+
+      const { data: publicData } = db.storage
+        .from("shirt-designs")
+        .getPublicUrl(imagePath);
+
+      const { error: insertError } = await db.from("products").insert({
+        name: document.getElementById("name").value.trim(),
+        category: document.getElementById("category").value.trim() || "Custom Design",
+        description: document.getElementById("description").value.trim(),
+        image_url: publicData.publicUrl,
+        image_path: imagePath,
+        round_neck_price: roundPrice,
+        lacoste_price: lacostePrice,
+        is_active: true
+      });
+
+      if (insertError) {
+        await db.storage.from("shirt-designs").remove([imagePath]);
+        button.disabled = false;
+        return showStatus("Could not save design: " + insertError.message, true);
+      }
+
+      event.target.reset();
+      document.getElementById("round-price").value = "50";
+      document.getElementById("lacoste-price").value = "60";
+      button.disabled = false;
+      showStatus("Design uploaded successfully.");
+      await loadProducts();
+    });
+
+    async function deleteProduct(id, imagePath) {
+      if (!confirm("Delete this design from the store?")) return;
+
+      const { error } = await db.from("products").delete().eq("id", id);
+      if (error) return alert("Could not delete design: " + error.message);
+
+      await db.storage.from("shirt-designs").remove([imagePath]);
+      await loadProducts();
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[char]);
+    }
+
+    db.auth.getSession().then(({ data }) => showAdmin(data.session?.user));
+  </script>
+</body>
+</html>
