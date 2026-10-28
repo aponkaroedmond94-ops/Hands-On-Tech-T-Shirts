@@ -20,6 +20,26 @@
     }
 
     * { box-sizing: border-box; }
+    
+.design-art.has-image {
+  display: block;
+  padding: 0;
+  min-height: 150px;
+  background: #eee;
+}
+
+.design-art.has-image::before,
+.design-art.has-image::after {
+  display: none;
+}
+
+.design-art.has-image img {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+
     body {
       margin: 0;
       color: var(--ink);
@@ -451,218 +471,327 @@
     </div>
   </div>
 
-  <script>
-    const designs = [
-      { name: "Merry Christmas", group: "Christmas Collection", icon: "🎄", title: "Merry Christmas", description: "Share love, peace and happiness.", color: "#c41e2b" },
-      { name: "Christmas Vibes Only", group: "Christmas Collection", icon: "✨", title: "Christmas Vibes", description: "A cheerful festive-season favourite.", color: "#14774b" },
-      { name: "Jesus Is the Reason", group: "Christian & Church", icon: "✝️", title: "Jesus Is the Reason", description: "For the season and church programmes.", color: "#0d6844" },
-      { name: "My Queen / My King", group: "Couples & Love", icon: "👑", title: "My Queen / My King", description: "A thoughtful matching-couple gift.", color: "#17191f" },
-      { name: "Family Christmas Crew", group: "Family Collection", icon: "❤️", title: "Family Christmas Crew", description: "Make your family celebration special.", color: "#a31d24" },
-      { name: "Hello 2027", group: "New Year Collection", icon: "🎆", title: "Hello 2027", description: "Welcome the New Year in style.", color: "#151a24" },
-      { name: "Good Vibes Only", group: "Party & Festival", icon: "🌴", title: "Good Vibes Only", description: "Made for December outings and parties.", color: "#e2a900" },
-      { name: "Chale, We Made It", group: "Ghanaian Style", icon: "🇬🇭", title: "Chale, We Made It", description: "Celebrate the year with Ghanaian flair.", color: "#15543c" },
-      { name: "God's Grace", group: "Christian & Church", icon: "🙏", title: "God's Grace", description: "A faith-inspired design for every day.", color: "#f0eee7" },
-      { name: "My Favourite Human", group: "Personalised Gifts", icon: "🎁", title: "My Favourite Human", description: "A sweet gift for someone you love.", color: "#b99056" },
-      { name: "You Are My Always", group: "Romantic & Inspirational", icon: "💞", title: "You Are My Always", description: "A loving gift for your special person.", color: "#b6212c" },
-      { name: "Custom Design", group: "Personalised Gifts", icon: "✍️", title: "Make It Yours", description: "Add your own name or special message.", color: "#224d77" }
-    ];
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Replace these with your Supabase Project URL and anon/public key.
+  // Never put your Supabase service-role key in website code.
+  const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_PUBLIC_KEY";
 
-    const cartKey = "handsOnTechCartV1";
-    let cart = [];
-    let selectedDesign = null;
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const cartKey = "handsOnTechCartV1";
 
-    try {
-      cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
-      if (!Array.isArray(cart)) cart = [];
-    } catch {
-      cart = [];
+  let designs = [];
+  let cart = [];
+  let selectedDesign = null;
+
+  try {
+    cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
+    if (!Array.isArray(cart)) cart = [];
+  } catch {
+    cart = [];
+  }
+
+  const catalog = document.getElementById("catalog");
+  const backdrop = document.getElementById("modal-backdrop");
+  const notice = document.getElementById("notice");
+
+  function money(amount) {
+    const value = Number(amount);
+    return "GH₵" + (Number.isFinite(value) ? value : 0)
+      .toFixed(2)
+      .replace(/\.00$/, "");
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]);
+  }
+
+  async function loadDesigns() {
+    catalog.innerHTML = "<p>Loading designs…</p>";
+
+    const { data, error } = await db
+      .from("products")
+      .select("id,name,category,description,image_url,round_neck_price,lacoste_price")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Could not load designs:", error);
+      catalog.innerHTML =
+        '<p>We could not load the designs right now. Please try again later or WhatsApp us.</p>';
+      return;
     }
 
-    const catalog = document.getElementById("catalog");
-    const backdrop = document.getElementById("modal-backdrop");
-    const notice = document.getElementById("notice");
+    designs = data || [];
+    renderCatalog();
+  }
 
-    function money(amount) {
-      return "GH₵" + Number(amount).toFixed(2).replace(".00", "");
+  function renderCatalog() {
+    if (!designs.length) {
+      catalog.innerHTML =
+        '<p>No designs are available yet. Please check back soon or WhatsApp us.</p>';
+      return;
     }
 
-    function renderCatalog() {
-      catalog.innerHTML = designs.map((design, index) => `
+    catalog.innerHTML = designs.map((design, index) => {
+      const roundPrice = Number(design.round_neck_price);
+      const lacostePrice = Number(design.lacoste_price);
+      const startingPrice = Math.min(roundPrice, lacostePrice);
+
+      return `
         <article class="design-card">
-          <div class="design-art" style="background:${design.color}">
-            <div>
-              <div class="art-icon">${design.icon}</div>
-              <div class="art-title">${design.title}</div>
-            </div>
+          <div class="design-art has-image">
+            <img
+              src="${escapeHTML(design.image_url)}"
+              alt="${escapeHTML(design.name)}"
+              loading="lazy">
           </div>
           <div class="design-info">
-            <h3>${design.name}</h3>
-            <p>${design.group} · ${design.description}</p>
+            <h3>${escapeHTML(design.name)}</h3>
+            <p>${escapeHTML(design.category || "T-shirt design")} ·
+               ${escapeHTML(design.description || "")}</p>
             <div class="card-bottom">
-              <span class="from-price">From GH₵50</span>
-              <button class="add-button" data-design="${index}">Choose</button>
+              <span class="from-price">From ${money(startingPrice)}</span>
+              <button class="add-button" type="button" data-design="${index}">
+                Choose
+              </button>
             </div>
           </div>
         </article>
-      `).join("");
-
-      catalog.querySelectorAll("[data-design]").forEach(button => {
-        button.addEventListener("click", () => openModal(Number(button.dataset.design)));
-      });
-    }
-
-    function openModal(index) {
-      selectedDesign = designs[index];
-      document.getElementById("modal-title").textContent = selectedDesign.name;
-      document.getElementById("modal-description").textContent =
-        selectedDesign.group + " · " + selectedDesign.description;
-      document.getElementById("shirt-quantity").value = 1;
-      document.getElementById("shirt-custom").value = "";
-      backdrop.classList.add("open");
-      document.getElementById("shirt-type").focus();
-    }
-
-    function closeModal() {
-      backdrop.classList.remove("open");
-    }
-
-    function saveCart() {
-      try { localStorage.setItem(cartKey, JSON.stringify(cart)); } catch {}
-      renderCart();
-    }
-
-    function renderCart() {
-      const container = document.getElementById("cart-content");
-      if (!cart.length) {
-        container.innerHTML = '<div class="cart-empty">Your order is empty.<br>Choose a design to get started.</div>';
-        return;
-      }
-
-      const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      container.innerHTML = `
-        <div class="cart-list">
-          ${cart.map((item, index) => `
-            <div class="cart-item">
-              <div class="cart-item-top">
-                <div>
-                  <strong>${escapeHTML(item.design)} — ${escapeHTML(item.type)}</strong>
-                  <small>${escapeHTML(item.size)} · ${escapeHTML(item.colour)}${item.custom ? " · Custom: " + escapeHTML(item.custom) : ""}</small>
-                </div>
-                <button class="remove-item" data-remove="${index}" aria-label="Remove item">Remove</button>
-              </div>
-              <div class="cart-item-bottom">
-                <div class="qty-control">
-                  <button data-change="-1" data-index="${index}" aria-label="Decrease quantity">−</button>
-                  <span>${item.quantity}</span>
-                  <button data-change="1" data-index="${index}" aria-label="Increase quantity">+</button>
-                </div>
-                <strong>${money(item.price * item.quantity)}</strong>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-        <div class="cart-total"><span>Subtotal</span><span>${money(total)}</span></div>
       `;
+    }).join("");
 
-      container.querySelectorAll("[data-remove]").forEach(button => {
-        button.addEventListener("click", () => {
-          cart.splice(Number(button.dataset.remove), 1);
-          saveCart();
-        });
+    catalog.querySelectorAll("[data-design]").forEach(button => {
+      button.addEventListener("click", () => {
+        openModal(Number(button.dataset.design));
       });
+    });
+  }
 
-      container.querySelectorAll("[data-change]").forEach(button => {
-        button.addEventListener("click", () => {
-          const index = Number(button.dataset.index);
-          cart[index].quantity += Number(button.dataset.change);
-          if (cart[index].quantity < 1) cart.splice(index, 1);
-          saveCart();
-        });
-      });
+  function openModal(index) {
+    selectedDesign = designs[index];
+    if (!selectedDesign) return;
+
+    document.getElementById("modal-title").textContent = selectedDesign.name;
+    document.getElementById("modal-description").textContent =
+      `${selectedDesign.category || "T-shirt design"} · ${selectedDesign.description || ""}`;
+
+    // Use the prices set by the admin for this particular design.
+    document.getElementById("shirt-type").innerHTML = `
+      <option value="Round Neck">
+        Round Neck — ${money(selectedDesign.round_neck_price)}
+      </option>
+      <option value="Lacoste">
+        Lacoste — ${money(selectedDesign.lacoste_price)}
+      </option>
+    `;
+
+    document.getElementById("shirt-quantity").value = 1;
+    document.getElementById("shirt-custom").value = "";
+    backdrop.classList.add("open");
+    document.getElementById("shirt-type").focus();
+  }
+
+  function closeModal() {
+    backdrop.classList.remove("open");
+  }
+
+  function saveCart() {
+    try {
+      localStorage.setItem(cartKey, JSON.stringify(cart));
+    } catch (error) {
+      console.warn("Could not save the cart in this browser:", error);
     }
-
-    function escapeHTML(value) {
-      return String(value).replace(/[&<>"']/g, char => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-      })[char]);
-    }
-
-    document.getElementById("add-to-cart").addEventListener("click", () => {
-      const type = document.getElementById("shirt-type").value;
-      const quantity = Number(document.getElementById("shirt-quantity").value);
-      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
-        alert("Please enter a quantity between 1 and 99.");
-        return;
-      }
-
-      cart.push({
-        design: selectedDesign.name,
-        type,
-        price: type === "Lacoste" ? 60 : 50,
-        size: document.getElementById("shirt-size").value,
-        colour: document.getElementById("shirt-colour").value,
-        custom: document.getElementById("shirt-custom").value.trim(),
-        quantity
-      });
-
-      saveCart();
-      closeModal();
-      notice.style.display = "block";
-      notice.textContent = "Added to your order. Add another design or complete your details below.";
-      setTimeout(() => { notice.style.display = "none"; }, 4000);
-    });
-
-    document.getElementById("close-modal").addEventListener("click", closeModal);
-    backdrop.addEventListener("click", event => {
-      if (event.target === backdrop) closeModal();
-    });
-    document.addEventListener("keydown", event => {
-      if (event.key === "Escape") closeModal();
-    });
-
-    document.getElementById("checkout").addEventListener("click", () => {
-      const name = document.getElementById("customer-name").value.trim();
-      const phone = document.getElementById("customer-phone").value.trim();
-      const delivery = document.getElementById("delivery").value;
-      const notes = document.getElementById("customer-notes").value.trim();
-
-      if (!cart.length) {
-        alert("Please choose and add at least one T-shirt first.");
-        return;
-      }
-      if (!name || !phone || !delivery) {
-        alert("Please enter your name, phone number, and delivery or pickup preference.");
-        return;
-      }
-
-      const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const lines = cart.map((item, index) =>
-        `${index + 1}. ${item.design} — ${item.type}, ${item.size}, ${item.colour}, Qty: ${item.quantity}` +
-        (item.custom ? `, Custom text: "${item.custom}"` : "") +
-        ` — ${money(item.price * item.quantity)}`
-      );
-
-      const message = [
-        "Hello Hands On Tech! I'd like to place a T-shirt order:",
-        "",
-        ...lines,
-        "",
-        `Subtotal: ${money(total)}`,
-        "",
-        `Name: ${name}`,
-        `Customer phone: ${phone}`,
-        `Preference: ${delivery}`,
-        notes ? `Notes: ${notes}` : "",
-        "",
-        "Please confirm availability, delivery/pickup details, and the final amount. Thank you!"
-      ].filter(Boolean).join("\n");
-
-      const whatsappURL = "https://wa.me/233246116269?text=" + encodeURIComponent(message);
-      window.open(whatsappURL, "_blank", "noopener");
-    });
-
-    renderCatalog();
     renderCart();
-  </script>
+  }
+
+  function renderCart() {
+    const container = document.getElementById("cart-content");
+
+    if (!cart.length) {
+      container.innerHTML =
+        '<div class="cart-empty">Your order is empty.<br>Choose a design to get started.</div>';
+      return;
+    }
+
+    const total = cart.reduce(
+      (sum, item) => sum + Number(item.price) * Number(item.quantity),
+      0
+    );
+
+    container.innerHTML = `
+      <div class="cart-list">
+        ${cart.map((item, index) => `
+          <div class="cart-item">
+            <div class="cart-item-top">
+              <div>
+                <strong>${escapeHTML(item.design)} — ${escapeHTML(item.type)}</strong>
+                <small>
+                  ${escapeHTML(item.size)} · ${escapeHTML(item.colour)}
+                  ${item.custom ? " · Custom: " + escapeHTML(item.custom) : ""}
+                </small>
+              </div>
+              <button class="remove-item" type="button" data-remove="${index}">
+                Remove
+              </button>
+            </div>
+            <div class="cart-item-bottom">
+              <div class="qty-control">
+                <button type="button" data-change="-1" data-index="${index}"
+                        aria-label="Decrease quantity">−</button>
+                <span>${Number(item.quantity)}</span>
+                <button type="button" data-change="1" data-index="${index}"
+                        aria-label="Increase quantity">+</button>
+              </div>
+              <strong>${money(Number(item.price) * Number(item.quantity))}</strong>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="cart-total">
+        <span>Subtotal</span><span>${money(total)}</span>
+      </div>
+    `;
+
+    container.querySelectorAll("[data-remove]").forEach(button => {
+      button.addEventListener("click", () => {
+        cart.splice(Number(button.dataset.remove), 1);
+        saveCart();
+      });
+    });
+
+    container.querySelectorAll("[data-change]").forEach(button => {
+      button.addEventListener("click", () => {
+        const index = Number(button.dataset.index);
+        if (!cart[index]) return;
+
+        cart[index].quantity =
+          Number(cart[index].quantity) + Number(button.dataset.change);
+
+        if (cart[index].quantity < 1) {
+          cart.splice(index, 1);
+        }
+        saveCart();
+      });
+    });
+  }
+
+  document.getElementById("add-to-cart").addEventListener("click", () => {
+    if (!selectedDesign) {
+      alert("Please choose a design first.");
+      return;
+    }
+
+    const type = document.getElementById("shirt-type").value;
+    const quantity = Number(document.getElementById("shirt-quantity").value);
+
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+      alert("Please enter a quantity between 1 and 99.");
+      return;
+    }
+
+    // Attach the correct admin-set price for the selected shirt type.
+    const price = Number(
+      type === "Lacoste"
+        ? selectedDesign.lacoste_price
+        : selectedDesign.round_neck_price
+    );
+
+    if (!Number.isFinite(price) || price < 0) {
+      alert("This design has an invalid price. Please contact Hands On Tech.");
+      return;
+    }
+
+    cart.push({
+      design: selectedDesign.name,
+      type,
+      price,
+      size: document.getElementById("shirt-size").value,
+      colour: document.getElementById("shirt-colour").value,
+      custom: document.getElementById("shirt-custom").value.trim(),
+      quantity
+    });
+
+    saveCart();
+    closeModal();
+
+    notice.style.display = "block";
+    notice.textContent =
+      "Added to your order. Add another design or complete your details below.";
+
+    setTimeout(() => {
+      notice.style.display = "none";
+    }, 4000);
+  });
+
+  document.getElementById("close-modal").addEventListener("click", closeModal);
+
+  backdrop.addEventListener("click", event => {
+    if (event.target === backdrop) closeModal();
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeModal();
+  });
+
+  document.getElementById("checkout").addEventListener("click", () => {
+    const name = document.getElementById("customer-name").value.trim();
+    const phone = document.getElementById("customer-phone").value.trim();
+    const delivery = document.getElementById("delivery").value;
+    const notes = document.getElementById("customer-notes").value.trim();
+
+    if (!cart.length) {
+      alert("Please choose and add at least one T-shirt first.");
+      return;
+    }
+
+    if (!name || !phone || !delivery) {
+      alert("Please enter your name, phone number, and delivery or pickup preference.");
+      return;
+    }
+
+    const total = cart.reduce(
+      (sum, item) => sum + Number(item.price) * Number(item.quantity),
+      0
+    );
+
+    const orderLines = cart.map((item, index) =>
+      `${index + 1}. ${item.design} — ${item.type}, ${item.size}, ${item.colour}, Qty: ${item.quantity}` +
+      (item.custom ? `, Custom text: "${item.custom}"` : "") +
+      ` — ${money(Number(item.price) * Number(item.quantity))}`
+    );
+
+    const message = [
+      "Hello Hands On Tech! I'd like to place a T-shirt order:",
+      "",
+      ...orderLines,
+      "",
+      `Subtotal: ${money(total)}`,
+      "",
+      `Name: ${name}`,
+      `Customer phone: ${phone}`,
+      `Preference: ${delivery}`,
+      notes ? `Notes: ${notes}` : "",
+      "",
+      "Please confirm availability, delivery/pickup details, and the final amount. Thank you!"
+    ].filter(Boolean).join("\n");
+
+    const whatsappURL =
+      "https://wa.me/233246116269?text=" + encodeURIComponent(message);
+
+    window.open(whatsappURL, "_blank", "noopener");
+  });
+
+  // Load shared admin-uploaded designs, and restore the saved cart.
+  renderCart();
+  loadDesigns();
+</script>
 </body>
 </html>
