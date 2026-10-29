@@ -133,24 +133,27 @@
       align-items: start;
       gap: 22px;
     }
-    .catalog {
+    .catalog, .downloads-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 15px;
+    }
+    .downloads-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .design-card, .panel {
       background: white;
       border: 1px solid var(--line);
       border-radius: 16px;
       box-shadow: 0 4px 16px rgba(7,21,34,.035);
+      overflow: hidden;
     }
-    .design-card { overflow: hidden; }
     .design-info { padding: 14px; }
     .design-info h3 { font-size: 15px; margin: 0 0 5px; }
-    .design-info p { color: var(--muted); font-size: 12px; min-height: 33px; line-height: 1.45; margin: 0 0 12px; }
+    .design-info p { color: var(--muted); font-size: 12px; min-height: 25px; line-height: 1.45; margin: 0 0 12px; }
     .card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .from-price { font-weight: 900; font-size: 13px; }
-    .add-button, .download-btn {
+    .add-button, .download-btn, .preview-btn {
       border: 0;
       border-radius: 8px;
       background: var(--ink);
@@ -160,16 +163,12 @@
       font-weight: 800;
       text-decoration: none;
       display: inline-block;
+      text-align: center;
+      cursor: pointer;
     }
-    .add-button:hover, .download-btn:hover { background: #183853; }
-    
-    /* Downloads Section Grid */
-    .downloads-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 15px;
-      margin-top: 20px;
-    }
+    .download-btn { background: var(--green); }
+    .preview-btn { background: #e4e7ea; color: var(--ink); }
+    .add-button:hover, .download-btn:hover { opacity: 0.9; }
 
     .order-panel { padding: 20px; position: sticky; top: 14px; }
     .order-panel h2 { font-size: 21px; margin: 0 0 4px; }
@@ -205,6 +204,7 @@
     .benefit span { margin-right: 7px; }
     footer { background: var(--ink); color: #d8e0e8; text-align: center; padding: 25px 5%; font-size: 13px; margin-top: 40px; }
     footer strong { color: var(--gold); }
+    
     .modal-backdrop { display: none; position: fixed; inset: 0; z-index: 10; background: rgba(2,10,17,.66); padding: 18px; align-items: center; justify-content: center; }
     .modal-backdrop.open { display: flex; }
     .modal { background: white; border-radius: 17px; padding: 22px; width: min(100%, 470px); max-height: 92vh; overflow: auto; box-shadow: var(--shadow); }
@@ -216,18 +216,20 @@
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .modal-add { width: 100%; margin-top: 16px; }
     .notice { display: none; margin-top: 12px; padding: 10px; border-radius: 8px; background: #fff4d3; font-size: 12px; }
-    
+
+    /* Preview Image Modal Styles */
+    .preview-modal-content { text-align: center; }
+    .preview-modal-content img { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 10px; background: #000; margin-bottom: 15px; }
+
     @media (max-width: 900px) {
       .shop-layout { grid-template-columns: 1fr; }
       .order-panel { position: static; }
-      .catalog { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .downloads-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .catalog, .downloads-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 620px) {
       header { padding-bottom: 34px; }
       .hero { grid-template-columns: 1fr; margin-top: 38px; }
-      .hero-price { text-align: left; }
-      .catalog, .downloads-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .catalog, .downloads-grid { grid-template-columns: 1fr; gap: 10px; }
       .benefits { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
@@ -246,7 +248,7 @@
       <div>
         <span class="eyebrow">Your style. Your vibe.</span>
         <h1>Wear the joy.<br><span>Share the love.</span></h1>
-        <p>Find a design for Christmas, New Year, church, parties, family and friends—or download free graphics below.</p>
+        <p>Find a design for Christmas, New Year, church, parties, family and friends—or preview & download free graphics below.</p>
         <div class="hero-actions">
           <a class="button button-gold" href="#shop">Shop the collection ↓</a>
           <a class="button button-outline" href="#free-downloads">Free Downloads ↓</a>
@@ -305,12 +307,12 @@
       </aside>
     </div>
 
-    <!-- FREE DOWNLOADS SECTION -->
+    <!-- FREE DOWNLOADS SECTION WITH VISUAL PREVIEW CARDS -->
     <div id="free-downloads" style="margin-top: 60px;">
       <div class="section-head">
         <div>
           <h2>Free design downloads</h2>
-          <p>Download free resources, wallpapers, and templates provided by Hands On Tech.</p>
+          <p>Preview and download free resources and templates provided by Hands On Tech.</p>
         </div>
       </div>
       <div class="downloads-grid" id="downloads-catalog">
@@ -331,6 +333,7 @@
     <a href="tel:+233246116269">024 611 6269</a>
   </footer>
 
+  <!-- T-Shirt Order Modal -->
   <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal">
       <div class="modal-header">
@@ -376,6 +379,22 @@
     </div>
   </div>
 
+  <!-- Free Design Preview Modal -->
+  <div class="modal-backdrop" id="preview-modal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="preview-title">Design Preview</h2>
+        <button class="close-modal" id="close-preview" aria-label="Close">✕</button>
+      </div>
+      <div class="preview-modal-content" style="margin-top: 15px;">
+        <img id="preview-image" src="" alt="Free Design Preview">
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <a id="preview-download-link" href="" target="_blank" download class="button download-btn" style="flex:1; text-decoration: none;">Download File ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://jacgrswltzjyyryqxcyg.supabase.co";
@@ -387,6 +406,7 @@
     let designs = [];
     let cart = [];
     let selectedDesign = null;
+    let downloadsListCache = [];
 
     async function logVisitor() {
       try {
@@ -409,6 +429,7 @@
     const catalog = document.getElementById("catalog");
     const backdrop = document.getElementById("modal-backdrop");
     const notice = document.getElementById("notice");
+    const previewModal = document.getElementById("preview-modal");
 
     function money(amount) {
       const value = Number(amount);
@@ -454,20 +475,43 @@
       const container = document.getElementById("downloads-catalog");
       const { data, error } = await db.from("downloads").select("*").order("created_at", { ascending: false });
       if (error) return container.innerHTML = '<p>Could not load downloads.</p>';
-      if (!data || !data.length) return container.innerHTML = '<p>No free downloads available right now.</p>';
+      
+      downloadsListCache = data || [];
+      if (!downloadsListCache.length) return container.innerHTML = '<p>No free downloads available right now.</p>';
 
-      container.innerHTML = data.map(dl => `
+      container.innerHTML = downloadsListCache.map((dl, index) => `
         <article class="design-card">
-          <div class="design-info" style="padding: 18px;">
+          <div class="design-art has-image">
+            <img src="${escapeHTML(dl.file_url)}" alt="${escapeHTML(dl.title)}" loading="lazy">
+          </div>
+          <div class="design-info">
             <h3>${escapeHTML(dl.title)}</h3>
             <p>${escapeHTML(dl.category || "Free Resource")}</p>
-            <div class="card-bottom" style="margin-top: 15px;">
-              <a class="download-btn" href="${escapeHTML(dl.file_url)}" target="_blank" download>Download File ↗</a>
+            <div class="card-bottom" style="margin-top: 10px;">
+              <button class="preview-btn" type="button" data-preview="${index}">View Design</button>
+              <a class="download-btn" href="${escapeHTML(dl.file_url)}" target="_blank" download>Download</a>
             </div>
           </div>
         </article>
       `).join("");
+
+      container.querySelectorAll("[data-preview]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const dl = downloadsListCache[Number(btn.dataset.preview)];
+          if (dl) openPreviewModal(dl);
+        });
+      });
     }
+
+    function openPreviewModal(dl) {
+      document.getElementById("preview-title").textContent = dl.title;
+      document.getElementById("preview-image").src = dl.file_url;
+      document.getElementById("preview-download-link").href = dl.file_url;
+      previewModal.classList.add("open");
+    }
+
+    document.getElementById("close-preview").addEventListener("click", () => previewModal.classList.remove("open"));
+    previewModal.addEventListener("click", e => { if (e.target === previewModal) previewModal.classList.remove("open"); });
 
     function openModal(index) {
       selectedDesign = designs[index];
