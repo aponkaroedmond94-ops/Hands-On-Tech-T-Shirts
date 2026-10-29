@@ -25,7 +25,7 @@
     .actions { display: flex; gap: 8px; align-items: center; }
     .hidden { display: none !important; }
     .hint { color: #66717d; font-size: 13px; line-height: 1.5; }
-    #status { margin-top: 12px; white-space: pre-wrap; }
+    #status, #download-status { margin-top: 12px; white-space: pre-wrap; }
     .product { display: grid; grid-template-columns: 90px 1fr auto; gap: 14px; align-items: center; border-top: 1px solid #e4e7ea; padding: 14px 0; }
     .product img { width: 90px; height: 75px; object-fit: cover; border-radius: 8px; background: #eee; }
     .product small { display: block; color: #657282; margin-top: 4px; }
@@ -74,10 +74,11 @@
         </div>
       </div>
 
+      <!-- T-Shirt Store Products Form -->
       <div class="card">
         <button id="logout" style="float:right">Sign out</button>
         <h1 id="form-title">Manage T-shirt designs</h1>
-        <p class="hint">Upload a design picture, add the customer-facing details and set the price for each shirt type. Images should be JPG, PNG or WebP, up to 5 MB.</p>
+        <p class="hint">Upload a design picture, add details and set prices for customer orders.</p>
 
         <form id="product-form">
           <input type="hidden" id="edit-id" value="">
@@ -116,8 +117,40 @@
       </div>
 
       <div class="card">
-        <h2>Published designs</h2>
+        <h2>Published T-shirt designs</h2>
         <div id="products-list" class="hint">Loading designs…</div>
+      </div>
+
+      <!-- NEW: Free Downloadable Files Manager -->
+      <div class="card">
+        <h1 id="download-form-title">Manage Free Downloads</h1>
+        <p class="hint">Upload extra design files, graphics, or wallpapers for customers to download for free.</p>
+
+        <form id="download-form">
+          <input type="hidden" id="edit-download-id" value="">
+          <input type="hidden" id="edit-download-path" value="">
+          <input type="hidden" id="edit-download-url" value="">
+
+          <label for="dl-title">Download Title *</label>
+          <input id="dl-title" required maxlength="80" placeholder="e.g. New Year Wallpaper 2026">
+
+          <label for="dl-category">Category / Type</label>
+          <input id="dl-category" maxlength="60" placeholder="e.g. Wallpapers / Vectors">
+
+          <label for="dl-file">Design File <span id="dl-file-note">*</span></label>
+          <input id="dl-file" type="file" required>
+
+          <p class="actions">
+            <button class="gold" id="dl-upload-button" type="submit">Upload Free Design</button>
+            <button class="secondary hidden" id="cancel-dl-edit" type="button">Cancel edit</button>
+          </p>
+        </form>
+        <div id="download-status" class="hint" role="status"></div>
+      </div>
+
+      <div class="card">
+        <h2>Published Free Downloads</h2>
+        <div id="downloads-list" class="hint">Loading downloads…</div>
       </div>
     </section>
   </main>
@@ -129,14 +162,21 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let productsCache = [];
+    let downloadsCache = [];
 
     const loginCard = document.getElementById("login-card");
     const adminArea = document.getElementById("admin-area");
     const statusBox = document.getElementById("status");
+    const downloadStatusBox = document.getElementById("download-status");
 
     function showStatus(message, error = false) {
       statusBox.textContent = message;
       statusBox.style.color = error ? "#b8323e" : "#167247";
+    }
+
+    function showDownloadStatus(message, error = false) {
+      downloadStatusBox.textContent = message;
+      downloadStatusBox.style.color = error ? "#b8323e" : "#167247";
     }
 
     async function showAdmin(user) {
@@ -164,28 +204,15 @@
       adminArea.classList.remove("hidden");
       await loadVisitorStats();
       await loadProducts();
+      await loadDownloads();
     }
 
     async function loadVisitorStats() {
       const today = new Date().toISOString().split("T")[0];
-      
-      // Fetch today's unique visitors count
-      const { count: todayCount, error: todayError } = await db
-        .from("visitors")
-        .select("*", { count: 'exact', head: true })
-        .eq("visit_date", today);
-
-      // Fetch overall visitor logs count
-      const { count: totalCount, error: totalError } = await db
-        .from("visitors")
-        .select("*", { count: 'exact', head: true });
-
-      if (!todayError) {
-        document.getElementById("today-visitors").textContent = todayCount || 0;
-      }
-      if (!totalError) {
-        document.getElementById("total-visitors").textContent = totalCount || 0;
-      }
+      const { count: todayCount } = await db.from("visitors").select("*", { count: 'exact', head: true }).eq("visit_date", today);
+      const { count: totalCount } = await db.from("visitors").select("*", { count: 'exact', head: true });
+      document.getElementById("today-visitors").textContent = todayCount || 0;
+      document.getElementById("total-visitors").textContent = totalCount || 0;
     }
 
     document.getElementById("login-form").addEventListener("submit", async event => {
@@ -203,26 +230,15 @@
       location.reload();
     });
 
+    // --- PRODUCTS LOGIC ---
     async function loadProducts() {
       const list = document.getElementById("products-list");
       list.textContent = "Loading designs…";
-
-      const { data, error } = await db
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        list.textContent = "Could not load designs: " + error.message;
-        return;
-      }
+      const { data, error } = await db.from("products").select("*").order("created_at", { ascending: false });
+      if (error) return list.textContent = "Could not load designs: " + error.message;
       
       productsCache = data || [];
-
-      if (!productsCache.length) {
-        list.textContent = "No designs yet. Upload your first design above.";
-        return;
-      }
+      if (!productsCache.length) return list.textContent = "No designs yet.";
 
       list.innerHTML = productsCache.map(product => `
         <div class="product">
@@ -230,65 +246,47 @@
           <div>
             <strong>${escapeHTML(product.name)}</strong>
             <small>${escapeHTML(product.category || "")}</small>
-            <small>Round Neck: GH₵${Number(product.round_neck_price).toFixed(2)}
-              · Lacoste: GH₵${Number(product.lacoste_price).toFixed(2)}</small>
+            <small>Round: GH₵${Number(product.round_neck_price).toFixed(2)} · Lacoste: GH₵${Number(product.lacoste_price).toFixed(2)}</small>
           </div>
           <div class="actions">
             <button class="gold" data-edit="${escapeHTML(product.id)}">Edit</button>
-            <button class="danger" data-delete="${escapeHTML(product.id)}"
-              data-path="${escapeHTML(product.image_path)}">Delete</button>
+            <button class="danger" data-delete="${escapeHTML(product.id)}" data-path="${escapeHTML(product.image_path)}">Delete</button>
           </div>
         </div>
       `).join("");
 
-      list.querySelectorAll("[data-delete]").forEach(button => {
-        button.addEventListener("click", () => deleteProduct(button.dataset.delete, button.dataset.path));
-      });
-
-      list.querySelectorAll("[data-edit]").forEach(button => {
-        button.addEventListener("click", () => startEditing(button.dataset.edit));
-      });
+      list.querySelectorAll("[data-delete]").forEach(btn => btn.addEventListener("click", () => deleteProduct(btn.dataset.delete, btn.dataset.path)));
+      list.querySelectorAll("[data-edit]").forEach(btn => btn.addEventListener("click", () => startEditing(btn.dataset.edit)));
     }
 
     function startEditing(id) {
       const product = productsCache.find(p => String(p.id) === String(id));
       if (!product) return;
-
       document.getElementById("edit-id").value = product.id;
       document.getElementById("edit-image-path").value = product.image_path;
       document.getElementById("edit-image-url").value = product.image_url;
-
       document.getElementById("name").value = product.name;
       document.getElementById("category").value = product.category || "";
       document.getElementById("description").value = product.description || "";
       document.getElementById("round-price").value = product.round_neck_price;
       document.getElementById("lacoste-price").value = product.lacoste_price;
-
-      const imageInput = document.getElementById("image");
-      imageInput.required = false;
-      document.getElementById("image-label-note").textContent = "(Optional - keep current image if left blank)";
-
+      document.getElementById("image").required = false;
+      document.getElementById("image-label-note").textContent = "(Optional)";
       document.getElementById("upload-button").textContent = "Update design";
       document.getElementById("form-title").textContent = "Edit T-shirt design";
       document.getElementById("cancel-edit").classList.remove("hidden");
-
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function resetForm() {
-      const form = document.getElementById("product-form");
-      form.reset();
+      document.getElementById("product-form").reset();
       document.getElementById("edit-id").value = "";
       document.getElementById("edit-image-path").value = "";
       document.getElementById("edit-image-url").value = "";
-      
       document.getElementById("round-price").value = "50";
       document.getElementById("lacoste-price").value = "60";
-
-      const imageInput = document.getElementById("image");
-      imageInput.required = true;
+      document.getElementById("image").required = true;
       document.getElementById("image-label-note").textContent = "*";
-
       document.getElementById("upload-button").textContent = "Upload design";
       document.getElementById("form-title").textContent = "Manage T-shirt designs";
       document.getElementById("cancel-edit").classList.add("hidden");
@@ -298,110 +296,159 @@
 
     document.getElementById("product-form").addEventListener("submit", async event => {
       event.preventDefault();
-
       const editId = document.getElementById("edit-id").value;
       const file = document.getElementById("image").files[0];
-      
       if (!editId && !file) return showStatus("Please select an image.", true);
-
-      if (file) {
-        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-          return showStatus("Choose a JPG, PNG or WebP image.", true);
-        }
-        if (file.size > 5 * 1024 * 1024) {
-          return showStatus("The image must be 5 MB or smaller.", true);
-        }
-      }
-
-      const roundPrice = Number(document.getElementById("round-price").value);
-      const lacostePrice = Number(document.getElementById("lacoste-price").value);
-      if (roundPrice < 0 || lacostePrice < 0) {
-        return showStatus("Prices cannot be negative.", true);
-      }
 
       const button = document.getElementById("upload-button");
       button.disabled = true;
-      showStatus(editId ? "Saving changes..." : "Uploading picture and saving design…");
+      showStatus("Saving design...");
 
       let imageUrl = document.getElementById("edit-image-url").value;
       let imagePath = document.getElementById("edit-image-path").value;
-      let newImagePathUploaded = null;
+      let newUpload = null;
 
       if (file) {
-        const extension = file.name.split(".").pop().toLowerCase();
-        newImagePathUploaded = `${crypto.randomUUID()}.${extension}`;
-
-        const { error: uploadError } = await db.storage
-          .from("shirt-designs")
-          .upload(newImagePathUploaded, file, { upsert: false, contentType: file.type });
-
-        if (uploadError) {
-          button.disabled = false;
-          return showStatus("Image upload failed: " + uploadError.message, true);
-        }
-
-        const { data: publicData } = db.storage
-          .from("shirt-designs")
-          .getPublicUrl(newImagePathUploaded);
-
-        imageUrl = publicData.publicUrl;
+        const ext = file.name.split(".").pop().toLowerCase();
+        newUpload = `${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await db.storage.from("shirt-designs").upload(newUpload, file);
+        if (upErr) { button.disabled = false; return showStatus(upErr.message, true); }
+        imageUrl = db.storage.from("shirt-designs").getPublicUrl(newUpload).data.publicUrl;
       }
 
       const payload = {
         name: document.getElementById("name").value.trim(),
         category: document.getElementById("category").value.trim() || "Custom Design",
         description: document.getElementById("description").value.trim(),
-        round_neck_price: roundPrice,
-        lacoste_price: lacostePrice,
+        round_neck_price: Number(document.getElementById("round-price").value),
+        lacoste_price: Number(document.getElementById("lacoste-price").value),
         is_active: true
       };
 
-      if (file) {
-        payload.image_url = imageUrl;
-        payload.image_path = newImagePathUploaded;
-      }
+      if (file) { payload.image_url = imageUrl; payload.image_path = newUpload; }
 
-      let error = null;
+      const err = editId ? (await db.from("products").update(payload).eq("id", editId)).error : (await db.from("products").insert({ ...payload, image_url: imageUrl, image_path: imagePath || newUpload })).error;
 
-      if (editId) {
-        const { error: updateError } = await db
-          .from("products")
-          .update(payload)
-          .eq("id", editId);
-        error = updateError;
-      } else {
-        payload.image_url = imageUrl;
-        payload.image_path = imagePath || newImagePathUploaded;
-        const { error: insertError } = await db.from("products").insert(payload);
-        error = insertError;
-      }
-
-      if (error) {
-        if (newImagePathUploaded) {
-          await db.storage.from("shirt-designs").remove([newImagePathUploaded]);
-        }
-        button.disabled = false;
-        return showStatus("Could not save design: " + error.message, true);
-      }
-
-      if (editId && file && imagePath) {
-        await db.storage.from("shirt-designs").remove([imagePath]);
-      }
+      if (err) { button.disabled = false; return showStatus(err.message, true); }
+      if (editId && file && imagePath) await db.storage.from("shirt-designs").remove([imagePath]);
 
       resetForm();
       button.disabled = false;
-      showStatus(editId ? "Design updated successfully." : "Design uploaded successfully.");
-      await loadProducts();
+      showStatus("Saved successfully.");
+      loadProducts();
     });
 
-    async function deleteProduct(id, imagePath) {
-      if (!confirm("Delete this design from the store?")) return;
+    async function deleteProduct(id, path) {
+      if (!confirm("Delete this design?")) return;
+      await db.from("products").delete().eq("id", id);
+      await db.storage.from("shirt-designs").remove([path]);
+      loadProducts();
+    }
 
-      const { error } = await db.from("products").delete().eq("id", id);
-      if (error) return alert("Could not delete design: " + error.message);
 
-      await db.storage.from("shirt-designs").remove([imagePath]);
-      await loadProducts();
+    // --- FREE DOWNLOADS LOGIC ---
+    async function loadDownloads() {
+      const list = document.getElementById("downloads-list");
+      list.textContent = "Loading downloads…";
+      const { data, error } = await db.from("downloads").select("*").order("created_at", { ascending: false });
+      if (error) return list.textContent = "Could not load downloads: " + error.message;
+
+      downloadsCache = data || [];
+      if (!downloadsCache.length) return list.textContent = "No free downloads added yet.";
+
+      list.innerHTML = downloadsCache.map(dl => `
+        <div class="product">
+          <div>
+            <strong>${escapeHTML(dl.title)}</strong>
+            <small>${escapeHTML(dl.category || "General")}</small>
+          </div>
+          <div class="actions">
+            <a href="${escapeHTML(dl.file_url)}" target="_blank" download class="button" style="padding:6px 10px; font-size:12px; text-decoration:none;">View/Download</a>
+            <button class="gold" data-edit-dl="${escapeHTML(dl.id)}">Edit</button>
+            <button class="danger" data-delete-dl="${escapeHTML(dl.id)}" data-path="${escapeHTML(dl.file_path)}">Delete</button>
+          </div>
+        </div>
+      `).join("");
+
+      list.querySelectorAll("[data-delete-dl]").forEach(btn => btn.addEventListener("click", () => deleteDownload(btn.dataset.delete, btn.dataset.path)));
+      list.querySelectorAll("[data-edit-dl]").forEach(btn => btn.addEventListener("click", () => startEditingDownload(btn.dataset.editDl)));
+    }
+
+    function startEditingDownload(id) {
+      const dl = downloadsCache.find(d => String(d.id) === String(id));
+      if (!dl) return;
+      document.getElementById("edit-download-id").value = dl.id;
+      document.getElementById("edit-download-path").value = dl.file_path;
+      document.getElementById("edit-download-url").value = dl.file_url;
+      document.getElementById("dl-title").value = dl.title;
+      document.getElementById("dl-category").value = dl.category || "";
+      document.getElementById("dl-file").required = false;
+      document.getElementById("dl-file-note").textContent = "(Optional - keep current file if blank)";
+      document.getElementById("dl-upload-button").textContent = "Update Download";
+      document.getElementById("download-form-title").textContent = "Edit Free Download";
+      document.getElementById("cancel-dl-edit").classList.remove("hidden");
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function resetDownloadForm() {
+      document.getElementById("download-form").reset();
+      document.getElementById("edit-download-id").value = "";
+      document.getElementById("edit-download-path").value = "";
+      document.getElementById("edit-download-url").value = "";
+      document.getElementById("dl-file").required = true;
+      document.getElementById("dl-file-note").textContent = "*";
+      document.getElementById("dl-upload-button").textContent = "Upload Free Design";
+      document.getElementById("download-form-title").textContent = "Manage Free Downloads";
+      document.getElementById("cancel-dl-edit").classList.add("hidden");
+    }
+
+    document.getElementById("cancel-dl-edit").addEventListener("click", resetDownloadForm);
+
+    document.getElementById("download-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const editId = document.getElementById("edit-download-id").value;
+      const file = document.getElementById("dl-file").files[0];
+      if (!editId && !file) return showDownloadStatus("Please select a file.", true);
+
+      const button = document.getElementById("dl-upload-button");
+      button.disabled = true;
+      showDownloadStatus("Saving download...");
+
+      let fileUrl = document.getElementById("edit-download-url").value;
+      let filePath = document.getElementById("edit-download-path").value;
+      let newUpload = null;
+
+      if (file) {
+        const ext = file.name.split(".").pop().toLowerCase();
+        newUpload = `${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await db.storage.from("shirt-designs").upload(newUpload, file);
+        if (upErr) { button.disabled = false; return showDownloadStatus(upErr.message, true); }
+        fileUrl = db.storage.from("shirt-designs").getPublicUrl(newUpload).data.publicUrl;
+      }
+
+      const payload = {
+        title: document.getElementById("dl-title").value.trim(),
+        category: document.getElementById("dl-category").value.trim() || "Free Resource"
+      };
+
+      if (file) { payload.file_url = fileUrl; payload.file_path = newUpload; }
+
+      const err = editId ? (await db.from("downloads").update(payload).eq("id", editId)).error : (await db.from("downloads").insert({ ...payload, file_url: fileUrl, file_path: filePath || newUpload })).error;
+
+      if (err) { button.disabled = false; return showDownloadStatus(err.message, true); }
+      if (editId && file && filePath) await db.storage.from("shirt-designs").remove([filePath]);
+
+      resetDownloadForm();
+      button.disabled = false;
+      showDownloadStatus("Download saved successfully.");
+      loadDownloads();
+    });
+
+    async function deleteDownload(id, path) {
+      if (!confirm("Delete this download?")) return;
+      await db.from("downloads").delete().eq("id", id);
+      await db.storage.from("shirt-designs").remove([path]);
+      loadDownloads();
     }
 
     function escapeHTML(value) {
