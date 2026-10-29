@@ -121,10 +121,10 @@
         <div id="products-list" class="hint">Loading designs…</div>
       </div>
 
-      <!-- NEW: Free Downloadable Files Manager -->
+      <!-- Free Downloadable Files Manager -->
       <div class="card">
         <h1 id="download-form-title">Manage Free Downloads</h1>
-        <p class="hint">Upload extra design files, graphics, or wallpapers for customers to download for free.</p>
+        <p class="hint">Upload extra design pictures or wallpapers for customers to preview and download for free.</p>
 
         <form id="download-form">
           <input type="hidden" id="edit-download-id" value="">
@@ -137,8 +137,8 @@
           <label for="dl-category">Category / Type</label>
           <input id="dl-category" maxlength="60" placeholder="e.g. Wallpapers / Vectors">
 
-          <label for="dl-file">Design File <span id="dl-file-note">*</span></label>
-          <input id="dl-file" type="file" required>
+          <label for="dl-file">Design Image/File <span id="dl-file-note">*</span></label>
+          <input id="dl-file" type="file" accept="image/png,image/jpeg,image/webp" required>
 
           <p class="actions">
             <button class="gold" id="dl-upload-button" type="submit">Upload Free Design</button>
@@ -358,12 +358,12 @@
 
       list.innerHTML = downloadsCache.map(dl => `
         <div class="product">
+          <img src="${escapeHTML(dl.file_url)}" alt="">
           <div>
             <strong>${escapeHTML(dl.title)}</strong>
             <small>${escapeHTML(dl.category || "General")}</small>
           </div>
           <div class="actions">
-            <a href="${escapeHTML(dl.file_url)}" target="_blank" download class="button" style="padding:6px 10px; font-size:12px; text-decoration:none;">View/Download</a>
             <button class="gold" data-edit-dl="${escapeHTML(dl.id)}">Edit</button>
             <button class="danger" data-delete-dl="${escapeHTML(dl.id)}" data-path="${escapeHTML(dl.file_path)}">Delete</button>
           </div>
