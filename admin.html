@@ -29,6 +29,10 @@
     .product { display: grid; grid-template-columns: 90px 1fr auto; gap: 14px; align-items: center; border-top: 1px solid #e4e7ea; padding: 14px 0; }
     .product img { width: 90px; height: 75px; object-fit: cover; border-radius: 8px; background: #eee; }
     .product small { display: block; color: #657282; margin-top: 4px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+    .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; text-align: center; }
+    .stat-box h3 { margin: 0 0 5px; font-size: 14px; color: #64748b; }
+    .stat-box .count { font-size: 26px; font-weight: 900; color: #071522; }
     @media(max-width: 560px) {
       .row { grid-template-columns: 1fr; gap: 0; }
       .product { grid-template-columns: 65px 1fr; }
@@ -43,7 +47,7 @@
   <main>
     <section class="card" id="login-card">
       <h1>Admin login</h1>
-      <p class="hint">Sign in with the account you added to the Supabase admins table.</p>
+      <p class="hint">Sign in with your admin credentials.</p>
       <form id="login-form">
         <label for="email">Email</label>
         <input id="email" type="email" required autocomplete="username">
@@ -54,6 +58,22 @@
     </section>
 
     <section id="admin-area" class="hidden">
+      <!-- Visitor Statistics Panel -->
+      <div class="card">
+        <h2>Website Traffic Analytics</h2>
+        <p class="hint">Track daily unique visitors checking out your store.</p>
+        <div class="stats-grid" id="visitor-stats">
+          <div class="stat-box">
+            <h3>Today's Visitors</h3>
+            <div class="count" id="today-visitors">-</div>
+          </div>
+          <div class="stat-box">
+            <h3>Total Recorded Visits</h3>
+            <div class="count" id="total-visitors">-</div>
+          </div>
+        </div>
+      </div>
+
       <div class="card">
         <button id="logout" style="float:right">Sign out</button>
         <h1 id="form-title">Manage T-shirt designs</h1>
@@ -142,7 +162,30 @@
 
       loginCard.classList.add("hidden");
       adminArea.classList.remove("hidden");
+      await loadVisitorStats();
       await loadProducts();
+    }
+
+    async function loadVisitorStats() {
+      const today = new Date().toISOString().split("T")[0];
+      
+      // Fetch today's unique visitors count
+      const { count: todayCount, error: todayError } = await db
+        .from("visitors")
+        .select("*", { count: 'exact', head: true })
+        .eq("visit_date", today);
+
+      // Fetch overall visitor logs count
+      const { count: totalCount, error: totalError } = await db
+        .from("visitors")
+        .select("*", { count: 'exact', head: true });
+
+      if (!todayError) {
+        document.getElementById("today-visitors").textContent = todayCount || 0;
+      }
+      if (!totalError) {
+        document.getElementById("total-visitors").textContent = totalCount || 0;
+      }
     }
 
     document.getElementById("login-form").addEventListener("submit", async event => {
