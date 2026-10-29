@@ -19,8 +19,10 @@
     button { border: 0; border-radius: 8px; padding: 11px 15px; background: #071522; color: white; font-weight: 800; cursor: pointer; }
     button:disabled { opacity: .55; cursor: wait; }
     .gold { background: #ffd447; color: #071522; }
-    .danger { background: #b8323e; }
+    .secondary { background: #e4e7ea; color: #102033; }
+    .danger { background: #b8323e; color: white; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .actions { display: flex; gap: 8px; align-items: center; }
     .hidden { display: none !important; }
     .hint { color: #66717d; font-size: 13px; line-height: 1.5; }
     #status { margin-top: 12px; white-space: pre-wrap; }
@@ -31,7 +33,7 @@
       .row { grid-template-columns: 1fr; gap: 0; }
       .product { grid-template-columns: 65px 1fr; }
       .product img { width: 65px; height: 65px; }
-      .product button { grid-column: 2; justify-self: start; }
+      .product .actions { grid-column: 1 / -1; }
     }
   </style>
 </head>
@@ -54,10 +56,14 @@
     <section id="admin-area" class="hidden">
       <div class="card">
         <button id="logout" style="float:right">Sign out</button>
-        <h1>Manage T-shirt designs</h1>
+        <h1 id="form-title">Manage T-shirt designs</h1>
         <p class="hint">Upload a design picture, add the customer-facing details and set the price for each shirt type. Images should be JPG, PNG or WebP, up to 5 MB.</p>
 
         <form id="product-form">
+          <input type="hidden" id="edit-id" value="">
+          <input type="hidden" id="edit-image-path" value="">
+          <input type="hidden" id="edit-image-url" value="">
+
           <label for="name">Design name *</label>
           <input id="name" required maxlength="80" placeholder="e.g. Merry Christmas">
 
@@ -78,10 +84,13 @@
             </div>
           </div>
 
-          <label for="image">Design picture *</label>
+          <label for="image">Design picture <span id="image-label-note">*</span></label>
           <input id="image" type="file" accept="image/png,image/jpeg,image/webp" required>
 
-          <p><button class="gold" id="upload-button" type="submit">Upload design</button></p>
+          <p class="actions">
+            <button class="gold" id="upload-button" type="submit">Upload design</button>
+            <button class="secondary hidden" id="cancel-edit" type="button">Cancel edit</button>
+          </p>
         </form>
         <div id="status" class="hint" role="status"></div>
       </div>
@@ -98,6 +107,8 @@
     const SUPABASE_URL = "https://jacgrswltzjyyryqxcyg.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_F7uXsdSXRsDkbz4P116oeQ_0l4opPTB";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let productsCache = [];
 
     const loginCard = document.getElementById("login-card");
     const adminArea = document.getElementById("admin-area");
@@ -162,12 +173,15 @@
         list.textContent = "Could not load designs: " + error.message;
         return;
       }
-      if (!data.length) {
+      
+      productsCache = data || [];
+
+      if (!productsCache.length) {
         list.textContent = "No designs yet. Upload your first design above.";
         return;
       }
 
-      list.innerHTML = data.map(product => `
+      list.innerHTML = productsCache.map(product => `
         <div class="product">
           <img src="${escapeHTML(product.image_url)}" alt="">
           <div>
@@ -176,26 +190,84 @@
             <small>Round Neck: GH₵${Number(product.round_neck_price).toFixed(2)}
               · Lacoste: GH₵${Number(product.lacoste_price).toFixed(2)}</small>
           </div>
-          <button class="danger" data-delete="${escapeHTML(product.id)}"
-            data-path="${escapeHTML(product.image_path)}">Delete</button>
+          <div class="actions">
+            <button class="gold" data-edit="${escapeHTML(product.id)}">Edit</button>
+            <button class="danger" data-delete="${escapeHTML(product.id)}"
+              data-path="${escapeHTML(product.image_path)}">Delete</button>
+          </div>
         </div>
       `).join("");
 
       list.querySelectorAll("[data-delete]").forEach(button => {
         button.addEventListener("click", () => deleteProduct(button.dataset.delete, button.dataset.path));
       });
+
+      list.querySelectorAll("[data-edit]").forEach(button => {
+        button.addEventListener("click", () => startEditing(button.dataset.edit));
+      });
     }
+
+    function startEditing(id) {
+      const product = productsCache.find(p => String(p.id) === String(id));
+      if (!product) return;
+
+      document.getElementById("edit-id").value = product.id;
+      document.getElementById("edit-image-path").value = product.image_path;
+      document.getElementById("edit-image-url").value = product.image_url;
+
+      document.getElementById("name").value = product.name;
+      document.getElementById("category").value = product.category || "";
+      document.getElementById("description").value = product.description || "";
+      document.getElementById("round-price").value = product.round_neck_price;
+      document.getElementById("lacoste-price").value = product.lacoste_price;
+
+      const imageInput = document.getElementById("image");
+      imageInput.required = false;
+      document.getElementById("image-label-note").textContent = "(Optional - keep current image if left blank)";
+
+      document.getElementById("upload-button").textContent = "Update design";
+      document.getElementById("form-title").textContent = "Edit T-shirt design";
+      document.getElementById("cancel-edit").classList.remove("hidden");
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+      const form = document.getElementById("product-form");
+      form.reset();
+      document.getElementById("edit-id").value = "";
+      document.getElementById("edit-image-path").value = "";
+      document.getElementById("edit-image-url").value = "";
+      
+      document.getElementById("round-price").value = "50";
+      document.getElementById("lacoste-price").value = "60";
+
+      const imageInput = document.getElementById("image");
+      imageInput.required = true;
+      document.getElementById("image-label-note").textContent = "*";
+
+      document.getElementById("upload-button").textContent = "Upload design";
+      document.getElementById("form-title").textContent = "Manage T-shirt designs";
+      document.getElementById("cancel-edit").classList.add("hidden");
+    }
+
+    document.getElementById("cancel-edit").addEventListener("click", resetForm);
 
     document.getElementById("product-form").addEventListener("submit", async event => {
       event.preventDefault();
 
+      const editId = document.getElementById("edit-id").value;
       const file = document.getElementById("image").files[0];
-      if (!file) return showStatus("Please select an image.", true);
-      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        return showStatus("Choose a JPG, PNG or WebP image.", true);
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        return showStatus("The image must be 5 MB or smaller.", true);
+      
+      if (!editId && !file) return showStatus("Please select an image.", true);
+
+      if (file) {
+        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+          return showStatus("Choose a JPG, PNG or WebP image.", true);
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          return showStatus("The image must be 5 MB or smaller.", true);
+        }
       }
 
       const roundPrice = Number(document.getElementById("round-price").value);
@@ -206,46 +278,76 @@
 
       const button = document.getElementById("upload-button");
       button.disabled = true;
-      showStatus("Uploading picture and saving design…");
+      showStatus(editId ? "Saving changes..." : "Uploading picture and saving design…");
 
-      const extension = file.name.split(".").pop().toLowerCase();
-      const imagePath = `${crypto.randomUUID()}.${extension}`;
+      let imageUrl = document.getElementById("edit-image-url").value;
+      let imagePath = document.getElementById("edit-image-path").value;
+      let newImagePathUploaded = null;
 
-      const { error: uploadError } = await db.storage
-        .from("shirt-designs")
-        .upload(imagePath, file, { upsert: false, contentType: file.type });
+      if (file) {
+        const extension = file.name.split(".").pop().toLowerCase();
+        newImagePathUploaded = `${crypto.randomUUID()}.${extension}`;
 
-      if (uploadError) {
-        button.disabled = false;
-        return showStatus("Image upload failed: " + uploadError.message, true);
+        const { error: uploadError } = await db.storage
+          .from("shirt-designs")
+          .upload(newImagePathUploaded, file, { upsert: false, contentType: file.type });
+
+        if (uploadError) {
+          button.disabled = false;
+          return showStatus("Image upload failed: " + uploadError.message, true);
+        }
+
+        const { data: publicData } = db.storage
+          .from("shirt-designs")
+          .getPublicUrl(newImagePathUploaded);
+
+        imageUrl = publicData.publicUrl;
       }
 
-      const { data: publicData } = db.storage
-        .from("shirt-designs")
-        .getPublicUrl(imagePath);
-
-      const { error: insertError } = await db.from("products").insert({
+      const payload = {
         name: document.getElementById("name").value.trim(),
         category: document.getElementById("category").value.trim() || "Custom Design",
         description: document.getElementById("description").value.trim(),
-        image_url: publicData.publicUrl,
-        image_path: imagePath,
         round_neck_price: roundPrice,
         lacoste_price: lacostePrice,
         is_active: true
-      });
+      };
 
-      if (insertError) {
-        await db.storage.from("shirt-designs").remove([imagePath]);
-        button.disabled = false;
-        return showStatus("Could not save design: " + insertError.message, true);
+      if (file) {
+        payload.image_url = imageUrl;
+        payload.image_path = newImagePathUploaded;
       }
 
-      event.target.reset();
-      document.getElementById("round-price").value = "50";
-      document.getElementById("lacoste-price").value = "60";
+      let error = null;
+
+      if (editId) {
+        const { error: updateError } = await db
+          .from("products")
+          .update(payload)
+          .eq("id", editId);
+        error = updateError;
+      } else {
+        payload.image_url = imageUrl;
+        payload.image_path = imagePath || newImagePathUploaded;
+        const { error: insertError } = await db.from("products").insert(payload);
+        error = insertError;
+      }
+
+      if (error) {
+        if (newImagePathUploaded) {
+          await db.storage.from("shirt-designs").remove([newImagePathUploaded]);
+        }
+        button.disabled = false;
+        return showStatus("Could not save design: " + error.message, true);
+      }
+
+      if (editId && file && imagePath) {
+        await db.storage.from("shirt-designs").remove([imagePath]);
+      }
+
+      resetForm();
       button.disabled = false;
-      showStatus("Design uploaded successfully.");
+      showStatus(editId ? "Design updated successfully." : "Design uploaded successfully.");
       await loadProducts();
     });
 
