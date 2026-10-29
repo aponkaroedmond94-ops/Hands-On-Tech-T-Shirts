@@ -473,8 +473,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // Replace these with your Supabase Project URL and anon/public key.
-  // Never put your Supabase service-role key in website code.
   const SUPABASE_URL = "https://jacgrswltzjyyryqxcyg.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_F7uXsdSXRsDkbz4P116oeQ_0l4opPTB";
 
@@ -484,6 +482,26 @@
   let designs = [];
   let cart = [];
   let selectedDesign = null;
+
+  // Track daily store visitor anonymously once per day
+  async function logVisitor() {
+    try {
+      let visitorId = localStorage.getItem("handsOnTechVisitorId");
+      if (!visitorId) {
+        visitorId = crypto.randomUUID();
+        localStorage.setItem("handsOnTechVisitorId", visitorId);
+      }
+      const today = new Date().toISOString().split("T")[0];
+      
+      await db.from("visitors").upsert({
+        visit_date: today,
+        visitor_identifier: visitorId
+      }, { onConflict: 'visit_date,visitor_identifier' });
+    } catch (e) {
+      // Ignore network errors on tracking
+    }
+  }
+  logVisitor();
 
   try {
     cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
@@ -583,7 +601,6 @@
     document.getElementById("modal-description").textContent =
       `${selectedDesign.category || "T-shirt design"} · ${selectedDesign.description || ""}`;
 
-    // Use the prices set by the admin for this particular design.
     document.getElementById("shirt-type").innerHTML = `
       <option value="Round Neck">
         Round Neck — ${money(selectedDesign.round_neck_price)}
@@ -697,7 +714,6 @@
       return;
     }
 
-    // Attach the correct admin-set price for the selected shirt type.
     const price = Number(
       type === "Lacoste"
         ? selectedDesign.lacoste_price
@@ -789,7 +805,6 @@
     window.open(whatsappURL, "_blank", "noopener");
   });
 
-  // Load shared admin-uploaded designs, and restore the saved cart.
   renderCart();
   loadDesigns();
 </script>
