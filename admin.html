@@ -370,7 +370,8 @@
         </div>
       `).join("");
 
-      list.querySelectorAll("[data-delete-dl]").forEach(btn => btn.addEventListener("click", () => deleteDownload(btn.dataset.delete, btn.dataset.path)));
+      // FIXED: Using dataset.deleteDl instead of dataset.delete
+      list.querySelectorAll("[data-delete-dl]").forEach(btn => btn.addEventListener("click", () => deleteDownload(btn.dataset.deleteDl, btn.dataset.path)));
       list.querySelectorAll("[data-edit-dl]").forEach(btn => btn.addEventListener("click", () => startEditingDownload(btn.dataset.editDl)));
     }
 
